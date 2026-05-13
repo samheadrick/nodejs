@@ -1,0 +1,27 @@
+name: Security Scan
+on: [pull_request]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Armis Security Scan
+        uses: ArmisSecurity/armis-cli@main
+        with:
+          scan-type: repo
+          client-id: ${{ secrets.ARMIS_CLIENT_ID }}
+          client-secret: ${{ secrets.ARMIS_CLIENT_SECRET }}
+          format: sarif
+          output-file: results.sarif
+          fail-on: HIGH,CRITICAL
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: results.sarif
