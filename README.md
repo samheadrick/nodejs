@@ -4,7 +4,6 @@ nodejs
 Node js sample codes for beginners. We can get output of every nodejs codes using terminal. like<br>
 $ node mysql.js
 
-
 Install latest nodejs
 -------------------------------------------------------------
 $ sudo apt-get install python-software-properties<br>
