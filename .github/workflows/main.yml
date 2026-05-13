@@ -1,27 +1,41 @@
-name: Security Scan
-on: [pull_request]
+name: PR Security Scan
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
 
 jobs:
-  security-scan:
+  get-changed-files:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
+    outputs:
+      files: ${{ steps.changed-files.outputs.all_changed_files }}
+      any_changed: ${{ steps.changed-files.outputs.any_changed }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Run Armis Security Scan
-        uses: ArmisSecurity/armis-cli@main
         with:
-          scan-type: repo
-          client-id: ${{ secrets.ARMIS_CLIENT_ID }}
-          client-secret: ${{ secrets.ARMIS_CLIENT_SECRET }}
-          format: sarif
-          output-file: results.sarif
-          fail-on: ''
+          fetch-depth: 0
 
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v46
         with:
-          sarif_file: results.sarif
+          separator: ','
+          # Exclude test files from security scan
+          files_ignore: |
+            **/*_test.go
+            **/testdata/**
+
+  security-scan:
+    needs: get-changed-files
+    if: needs.get-changed-files.outputs.any_changed == 'true'
+    uses: ArmisSecurity/armis-cli/.github/workflows/reusable-security-scan.yml@main
+    with:
+      fail-on: 'CRITICAL,HIGH'
+      include-files: ${{ needs.get-changed-files.outputs.files }}
+    secrets:
+      client-id: ${{ secrets.ARMIS_CLIENT_ID }}
+      client-secret: ${{ secrets.ARMIS_CLIENT_SECRET }}
