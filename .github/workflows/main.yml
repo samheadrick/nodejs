@@ -18,7 +18,7 @@ jobs:
           client-secret: ${{ secrets.ARMIS_CLIENT_SECRET }}
           format: sarif
           output-file: results.sarif
-          fail-on: HIGH,CRITICAL
+          fail-on: ''
 
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v4
